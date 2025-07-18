@@ -93,39 +93,6 @@ class PokDengBot {
   }
 
   /**
-   * Calculate win probability based on current hand and dealer information
-   * @param {Array} playerCards - Player's current cards (always 2 cards)
-   * @param {Array} dealerCards - Dealer's visible cards (optional)
-   * @returns {number} - Win probability (0-1)
-   */
-  calculateWinProbability(playerCards, dealerCards = []) {
-    const playerScore = this.calculateScore(playerCards)
-    const playerSpecial = this.checkSpecialHands(playerCards)
-
-    // If player has Pok, very high chance of winning
-    if (playerSpecial.isPok) {
-      return playerScore === 9 ? 0.95 : 0.85
-    }
-
-    // Basic probability calculation based on score
-    let baseProb = playerScore / 9
-
-    // If we know dealer's cards, adjust accordingly
-    if (dealerCards && dealerCards.length > 0) {
-      const dealerScore = this.calculateScore(dealerCards)
-      const dealerSpecial = this.checkSpecialHands(dealerCards)
-
-      if (dealerSpecial.isPok && dealerScore >= playerScore) {
-        baseProb *= 0.3
-      } else if (dealerScore > playerScore) {
-        baseProb *= 0.6
-      }
-    }
-
-    return Math.max(0, Math.min(1, baseProb))
-  }
-
-  /**
    * Make decisions for multiple hands
    * @param {Array} playHands - Array of player hands, each hand is an array of cards
    * @param {Array} knownHands - Array of known hands for context
@@ -175,14 +142,13 @@ class PokDengBot {
   makeDecision(playerCards, dealerCards = [], gameState = {}) {
     const playerScore = this.calculateScore(playerCards)
     const playerSpecial = this.checkSpecialHands(playerCards)
-    const winProb = this.calculateWinProbability(playerCards, dealerCards)
 
     // Check for immediate stand conditions (Pok hands)
     const immediateStand = this.checkImmediateStand(playerCards, playerScore, playerSpecial)
     if (immediateStand) return immediateStand
 
     // Decision logic for 2-card hands (we always have 2 cards when deciding)
-    const decision = this.makeTwoCardDecision(playerScore, winProb)
+    const decision = this.makeTwoCardDecision(playerScore)
 
     // Adjust for dealer cards if available
     if (dealerCards && dealerCards.length > 0) {
@@ -234,7 +200,7 @@ class PokDengBot {
     }
 
     if (playerScore >= 5) {
-      const action = winProb > 0.6 ? 'stand' : 'hit'
+      const action = 'stand'
       return {
         action,
         confidence: 0.6,
